@@ -1,3 +1,3 @@
 @echo off
-jai build.jai
+jai build.jai -import_dir %JAI_MODULES% - %*
 

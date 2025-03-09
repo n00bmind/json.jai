@@ -196,6 +196,10 @@ json_parse_error_e :: enum
 /* Parse a JSON text file, returning a pointer to the root of the JSON
  * structure. json_parse performs 1 call to malloc for the entire encoding.
  * Returns 0 if an error occurred (malformed JSON input, or malloc failed). */
+json_parse :: ( src: string ) -> *json_value_s
+{
+    return json_parse_ex( src.data, xx src.count, .json_parse_flags_default, null, null, null );
+}
 json_parse :: ( src: *void, src_size: u64 ) -> *json_value_s
 {
     return json_parse_ex( src, src_size, .json_parse_flags_default, null, null, null );
