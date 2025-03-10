@@ -746,18 +746,11 @@ test_object_empty_strings :: ()
 
 test_string_unicode_escape :: ()
 {
-    expected_str: string =
-        "\xEA\x83\x8A"
-        "ABC"
-        "\xC3\x8A"
-        "DEF"
-        "\n"
-        " ,\xC5\xBD,\xE0\xA0\x80,\xE0\xA6\xA8,\xE2\x99\x9E,\xEF\xBF\xBD,\xD0\xA8,"
-        "\xE4\x93\x8D,\xF0\x90\x80\x80,\xF0\x9F\x98\x83.";
+    expected_str :=
+        "\xEA\x83\x8AABC\xC3\x8ADEF\n ,\xC5\xBD,\xE0\xA0\x80,\xE0\xA6\xA8,\xE2\x99\x9E,\xEF\xBF\xBD,\xD0\xA8,\xE4\x93\x8D,\xF0\x90\x80\x80,\xF0\x9F\x98\x83.";
 
-    payload := "[\"\\ua0caABC\\u00caDEF\\u000a"
-        "\\u0020,\\u017D,\\u0800,\\u09A8,\\u265E,\\uFFFD,"
-        "\\u0428,\\u44CD,\\uD800\\uDC00,\\uD83D\\uDE03.\"]";
+    payload :=
+        "[\"\\Ua0caABC\\U00caDEF\\u000a\\u0020,\\u017D,\\u0800,\\u09A8,\\u265E,\\uFFFD,\\u0428,\\u44CD,\\uD800\\uDC00,\\uD83D\\uDE03.\"]";
 
     value := json_parse(payload);
 
@@ -776,11 +769,11 @@ test_string_unicode_escape :: ()
 
     str := cast(*json_string_s)array.start.value.payload;
 
-    Assert(str.string);
+    Assert(str.str);
 
-    Assert(streq(expected_str, str.string));
-    AssertEqual(strlen(expected_str), str.string_size);
-    AssertEqual(strlen(str.string), str.string_size);
+    Assert(streq(expected_str, str.str));
+    AssertEqual(expected_str.count, xx str.string_size);
+    AssertEqual(strlen(str.str), str.string_size);
 
     free(value);
 } @test
@@ -796,7 +789,7 @@ test_helpers_all :: ()
 
     object_element := object.start;
     Assert(object_element);
-    Assert(streq(object_element.name.string, "foo"));
+    Assert(streq("foo", object_element.name.str));
     AssertFalse(object_element.next);
 
     array := json_value_as_array(object_element.value);
@@ -809,30 +802,30 @@ test_helpers_all :: ()
     Assert(json_value_is_null(array_element.value));
 
     // true
-    array_element := array_element.next;
+    array_element = array_element.next;
     Assert(array_element);
     Assert(json_value_is_true(array_element.value));
 
     // false
-    array_element := array_element.next;
+    array_element = array_element.next;
     Assert(array_element);
     Assert(json_value_is_false(array_element.value));
 
     // string
-    array_element := array_element.next;
+    array_element = array_element.next;
     Assert(array_element);
 
-    string := json_value_as_string(array_element.value);
-    Assert(string);
-    Assert(streq(string->string, "bar");
+    str := json_value_as_string(array_element.value);
+    Assert(str);
+    Assert(streq("bar", str.str));
 
     // number
-    array_element := array_element.next;
+    array_element = array_element.next;
     Assert(array_element);
 
     number := json_value_as_number(array_element.value);
     Assert(number);
-    Assert(streq(number.number, "42");
+    Assert(streq("42", number.number));
 
     AssertFalse(array_element.next);
 
@@ -848,46 +841,46 @@ test_random_overflow :: ()
 
 test_random_whitespace_overrun :: ()
 {
-    payload := {'1', 'e'};
-    root := json_parse(payload, 2);
+    payload := u8.[ #char "1", #char "e" ];
+    root := json_parse(payload.data, 2);
     AssertFalse(root);
 } @test
 
 test_random_number_overrun :: ()
 {
-    payload := {'0', '.'};
-    root := json_parse(payload, 2);
+    payload := u8.[ #char "0", #char "." ];
+    root := json_parse(payload.data, 2);
     AssertFalse(root);
 } @test
 
 test_random_skip_c_style_overrun :: ()
 {
-    payload := {'4', 'e'};
-    root := json_parse_ex(payload, 2, .json_parse_flags_allow_json5, 0, null, null);
+    payload := u8.[ #char "4", #char "e" ];
+    root := json_parse_ex(payload.data, 2, .json_parse_flags_allow_json5, null, null, null);
     AssertFalse(root);
 } @test
 
 test_random_infinity_overrun :: ()
 {
-    payload := {'[', 'I', 'n', 'f', 'i', 'n', 'i', 't', 'y', '0', ']'};
-    root := json_parse_ex(payload, 11, .json_parse_flags_allow_inf_and_nan, 0, null, null);
+    payload := u8.[ #char "[", #char "I", #char "n", #char "f", #char "i", #char "n", #char "i", #char "t", #char "y", #char "0", #char "]" ];
+    root := json_parse_ex(payload.data, 11, .json_parse_flags_allow_inf_and_nan, null, null, null);
     AssertFalse(root);
 } @test
 
 test_random_nan_overrun :: ()
 {
-    payload := {'[', 'N', 'a', 'N', '0', ']'};
-    root := json_parse_ex(payload, 11, .json_parse_flags_allow_inf_and_nan, 0, null, null);
+    payload := u8.[ #char "[", #char "N", #char "a", #char "N", #char "0", #char "]" ];
+    root := json_parse_ex(payload.data, 11, .json_parse_flags_allow_inf_and_nan, null, null, null);
     AssertFalse(root);
 } @test
 
 test_random_array_overrun :: ()
 {
-    payload := {'{', '"', 'k', '"', ' ', ':', ' ', 't', 'r', 'u',
-                'e', '/', ' ', '"', 'b', '"', ' ', ':', ' ', '[',
-                'f', 'a', 'l', 's', 'e', ',', ' ', 'n', 'u', 'l',
-                'l', ',', ' ', '"', 'f', 'o', 'o', '"', ']', '}'};
-    root := json_parse_ex(payload, 40, 0x2ffff, 0, null, null);
+    payload := u8.[ #char "{", #char "\"", #char "k", #char "\"", #char " ", #char ":", #char " ", #char "t", #char "r", #char "u",
+        #char "e", #char "/", #char " ", #char "\"", #char "b", #char "\"", #char " ", #char ":", #char " ", #char "[",
+        #char "f", #char "a", #char "l", #char "s", #char "e", #char ",", #char " ", #char "n", #char "u", #char "l",
+        #char "l", #char ",", #char " ", #char "\"", #char "f", #char "o", #char "o", #char "\"", #char "]", #char "}" ];
+    root := json_parse_ex(payload.data, 40, 0x2ffff, null, null, null);
     AssertFalse(root);
 } @test
 

@@ -330,6 +330,56 @@ json_parse_ex :: ( src: *void, src_size: u64, flags_bitset: json_parse_flags_e, 
 }
 
 
+
+json_value_as_string :: ( value: *json_value_s ) -> *json_string_s
+{
+    if value.type != .json_type_string
+        return null;
+
+    return cast(*json_string_s)value.payload;
+}
+
+json_value_as_number :: ( value: *json_value_s ) -> *json_number_s
+{
+    if value.type != .json_type_number
+        return null;
+
+    return cast(*json_number_s)value.payload;
+}
+
+json_value_as_object :: ( value: *json_value_s ) -> *json_object_s
+{
+    if value.type != .json_type_object
+        return null;
+
+    return cast(*json_object_s)value.payload;
+}
+
+json_value_as_array :: ( value: *json_value_s ) -> *json_array_s
+{
+    if value.type != .json_type_array
+        return null;
+
+    return cast(*json_array_s)value.payload;
+}
+
+json_value_is_true :: ( value: *json_value_s ) -> bool
+{
+    return value.type == .json_type_true;
+}
+
+json_value_is_false :: ( value: *json_value_s ) -> bool
+{
+    return value.type == .json_type_false;
+}
+
+json_value_is_null :: ( value: *json_value_s ) -> bool
+{
+    return value.type == .json_type_null;
+}
+
+
+
 #scope_module
 
 /* a JSON value (extended). */
