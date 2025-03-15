@@ -718,9 +718,7 @@ json_get_object_size :: ( state: *json_parse_state_s, is_global_object: int ) ->
         return 1;
     }
 
-    // TODO Review control flow!
     while state.offset < size
-    // do
     {
         if !is_global_object
         {
@@ -831,7 +829,7 @@ json_get_object_size :: ( state: *json_parse_state_s, is_global_object: int ) ->
         /* successfully parsed a name/value pair! */
         elements += 1;
         allow_comma = 1;
-    } // while state.offset < size;
+    }
 
     if (state.offset == size) && !is_global_object && !found_closing_brace
     {

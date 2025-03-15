@@ -6,7 +6,7 @@ test_allow_json5_example1 :: ()
         foo: 'bar',
         while: true,
 
-        this: 'is a \
+        this: 'is a \n
         multi-line string',
 
         // this is an inline comment
@@ -22,7 +22,7 @@ test_allow_json5_example1 :: ()
 
         finally: 'a trailing comma',
         oh: [
-                \"we shouldn't forget\",
+                "we shouldn't forget",
                 'arrays can have',
                 'trailing commas too',
             ],
@@ -54,14 +54,14 @@ test_allow_json5_example2 :: ()
         ],
         main: 'lib/json5.js',
         bin: 'lib/cli.js',
-        files: [\"lib/\"],
+        files: ["lib/"],
         dependencies: {},
         devDependencies: {
-            gulp: \"^3.9.1\",
-            'gulp-jshint': \"^2.0.0\",
-            jshint: \"^2.9.1\",
-            'jshint-stylish': \"^2.1.0\",
-            mocha: \"^2.4.5\"
+            gulp: "^3.9.1",
+            'gulp-jshint': "^2.0.0",
+            jshint: "^2.9.1",
+            'jshint-stylish': "^2.1.0",
+            mocha: "^2.4.5"
         },
         scripts: {
             build: 'node ./lib/cli.js -c package.json5',
@@ -85,10 +85,8 @@ STR
 init_allow_json5 :: () -> *json_value_s
 {
     payload := #string STR
-    // This file is written in JSON5 syntax, naturally, but npm needs a "
-    regular
-    // JSON file, so compile via `npm run build`. Be sure to keep both in "
-    sync!
+    // This file is written in JSON5 syntax, naturally, but npm needs a regular
+    // JSON file, so compile via `npm run build`. Be sure to keep both in sync!
 
     {
         name: 'json5',
@@ -97,8 +95,7 @@ init_allow_json5 :: () -> *json_value_s
         keywords: ['json', 'es5'],
         author: 'Aseem Kishore <aseem.kishore@gmail.com>',
         contributors: [
-            // TODO: Should we remove this section in favor of GitHub's "
-    list?
+            // TODO: Should we remove this section in favor of GitHub's list?
             // https://github.com/json5/json5/contributors
             'Max Nanasy <max.nanasy@gmail.com>',
             'Andrew Eisenberg <andrew@eisenberg.as>',
@@ -106,20 +103,19 @@ init_allow_json5 :: () -> *json_value_s
         ],
         main: 'lib/json5.js',
         bin: 'lib/cli.js',
-        files: [\"lib/\"],
+        files: ["lib/"],
         dependencies: {},
         devDependencies: {
-            gulp: \"^3.9.1\",
-            'gulp-jshint': \"^2.0.0\",
-            jshint: \"^2.9.1\",
-            'jshint-stylish': \"^2.1.0\",
-            mocha: \"^2.4.5\"
+            gulp: "^3.9.1",
+            'gulp-jshint': "^2.0.0",
+            jshint: "^2.9.1",
+            'jshint-stylish': "^2.1.0",
+            mocha: "^2.4.5"
         },
         scripts: {
             build: 'node ./lib/cli.js -c package.json5',
             test: 'mocha --ui exports --reporter spec',
-                // TODO: Would it be better to define these in a mocha.opts "
-    file?
+                // TODO: Would it be better to define these in a mocha.opts file?
         },
         homepage: 'http://json5.org/',
         license: 'MIT',
