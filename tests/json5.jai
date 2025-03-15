@@ -28,7 +28,7 @@ test_allow_json5_example1 :: ()
             ],
     }
 STR
-    value = json_parse_ex(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
+    value := json_parse_ex(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
     Assert(value);
     free(value);
 } @test
@@ -144,13 +144,12 @@ test_read_write_pretty_read :: ()
     root := init_allow_json5();
     Assert(root);
 
-    size: u64 = 0;
-    json := json_write_pretty(root, "  ", "\n", *size);
+    json := json_write_pretty( root, "  ", "\n" );
 
-    free(root);
-    root = json_parse(json, size - 1);
+    free( root );
+    root = json_parse( json );
 
-    free(json);
+    free( json );
     shutdown_allow_json5( root );
 } @test
 
@@ -159,12 +158,11 @@ test_read_write_minified_read :: ()
     root := init_allow_json5();
     Assert(root);
 
-    size: u64 = 0;
-    json := json_write_minified(root, *size);
+    json := json_write_minified( root );
 
-    free(root);
-    root = json_parse(json, size - 1);
+    free( root );
+    root = json_parse( json );
 
-    free(json);
+    free( json );
     shutdown_allow_json5( root );
 } @test

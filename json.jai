@@ -386,11 +386,10 @@ json_value_is_null :: ( value: *json_value_s ) -> bool
 
 //// Writing
 
-// TODO Should alloc_proc conform to the Basic's "standard"? Should we create our own convention?
 json_write_minified :: ( value: *json_value_s ) -> string
 {
     if null == value
-        return null;
+        return "";
 
     builder: String_Builder;
     builder.allocator = temp;
@@ -408,13 +407,16 @@ json_write_minified :: ( value: *json_value_s ) -> string
 json_write_pretty :: ( value: *json_value_s, indent: string, newline: string ) -> string
 {
     if null == value
-        return null;
+        return "";
 
-    if null == indent
+    #if 0
+    {
+        if null == indent
         indent = "  "; /* default to two spaces. */
 
-    if null == newline
+        if null == newline
         newline = "\n"; /* default to normal ass newlines. */
+    }
 
     builder: String_Builder;
     builder.allocator = temp;
@@ -2118,21 +2120,20 @@ json_hexadecimal_digit :: ( c: int ) -> int
 }
 
 
-// TODO Rework for StringBuilder
-json_write_minified_value :: ( value: *json_value_s, builder: *String_Builder )
+json_write_minified_value :: ( value: *json_value_s, builder: *String_Builder ) -> bool
 {
     if value.type ==
     {
         case;
-            /* unknown value type found! */
+            return false;
         case .json_type_number;
-            json_write_number( cast(*json_number_s)value.payload, builder );
+            return json_write_number( cast(*json_number_s)value.payload, builder );
         case .json_type_string;
-            json_write_string( cast(*json_string_s)value.payload, builder );
+            return json_write_string( cast(*json_string_s)value.payload, builder );
         case .json_type_array;
-            json_write_minified_array( cast(*json_array_s)value.payload, builder );
+            return json_write_minified_array( cast(*json_array_s)value.payload, builder );
         case .json_type_object;
-            json_write_minified_object( cast(*json_object_s)value.payload, builder );
+            return json_write_minified_object( cast(*json_object_s)value.payload, builder );
         case .json_type_true;
             append( builder, "true" );
         case .json_type_false;
@@ -2140,387 +2141,256 @@ json_write_minified_value :: ( value: *json_value_s, builder: *String_Builder )
         case .json_type_null;
             append( builder, "null" );
     }
+    return true;
 }
 
-json_write_number :: ( number: *json_number_s, builder: *String_Builder )
+json_write_pretty_value :: ( value: *json_value_s, depth: int, indent: string, newline: string, builder: *String_Builder ) -> bool
+{
+    if value.type ==
+    {
+        case;
+            return false;
+        case .json_type_number;
+            return json_write_number( cast(*json_number_s)value.payload, builder );
+        case .json_type_string;
+            return json_write_string( cast(*json_string_s)value.payload, builder );
+        case .json_type_array;
+            return json_write_pretty_array( cast(*json_array_s)value.payload, depth, indent, newline, builder );
+        case .json_type_object;
+            return json_write_pretty_object( cast(*json_object_s)value.payload, depth, indent, newline, builder );
+        case .json_type_true;
+            append( builder, "true" );
+        case .json_type_false;
+            append( builder, "false" );
+        case .json_type_null;
+            append( builder, "null" );
+    }
+    return true;
+}
+
+json_write_number :: ( number: *json_number_s, builder: *String_Builder ) -> bool
 {
     if number.number_size >= 2
     {
         if number.number[1] ==
         {
-            case;
-                break;
             case #char "x"; #through;
             case #char "X";
                 /* The number is a json_parse_flags_allow_hexadecimal_numbers hexadecimal
                 * so we have to do extra work to convert it to a non-hexadecimal for JSON
                 * output. */
                 // TODO Pass flags so we can support writing this as is
-                str := string.{ number.number + 2, number.number_size - 2 };
+                str := string.{ xx number.number_size - 2, number.number + 2 };
                 parsed_number := string_to_int( str, 16, u64 );
 
                 print_to_builder( builder, "%", parsed_number );
 
-                return;
+                return true;
         }
     }
 
     /* check to see if the number has leading/trailing decimal point. */
     i: u64 = 0;
-        /* skip any leading #char "-'. */
-        if ((i < number.number_size) &&
-        ((#char "+" == number.number[i]) || (#char "-" == number.number[i]))) {
-            i += 1;
-        }
+    /* skip any leading sign char. */
+    if (i < number.number_size) && ( (#char "+" == number.number[i]) || (#char "-" == number.number[i]) )
+        i += 1;
 
-        /* check if we have infinity. */
-        if ((i < number.number_size) && (#char "I" == number.number[i])) {
-            const char *inf = "Infinity";
-            size_t k;
+    num_str := string.{ xx (number.number_size - i), number.number + i };
 
-            for (k = i; k < number.number_size; k += 1) {
-                const char c = *inf += 1;
-
-                /* Check if we found the Infinity string! */
-                if (#char "\0" == c) {
-                    break;
-                } else if (c != number.number[k]) {
-                    break;
-                }
-            }
-
-            if (#char "\0" == *inf += 1) {
-                const char *dbl_max;
-
-                /* if we had a leading '-' we need to record it in the JSON output. */
-                if (#char "-" == number.number[0]) {
-                    *data += 1 = #char "-";
-                }
-
-                /* Inf becomes 1.7976931348623158e308 because JSON can't support it. */
-                for (dbl_max = "1.7976931348623158e308"; #char "\0" != *dbl_max; dbl_max += 1) {
-                    *data += 1 = *dbl_max;
-                }
-
-                return data;
-            }
-        }
-
-        /* check if we have nan. */
-        if ((i < number.number_size) && (#char "N" == number.number[i])) {
-            const char *nan = "NaN";
-            size_t k;
-
-            for (k = i; k < number.number_size; k += 1) {
-                const char c = *nan += 1;
-
-                /* Check if we found the NaN string! */
-                if (#char "\0" == c) {
-                    break;
-                } else if (c != number.number[k]) {
-                    break;
-                }
-            }
-
-            if (#char "\0" == *nan += 1) {
-                /* NaN becomes 0 because JSON can't support it. */
-                *data += 1 = #char "0";
-                return data;
-            }
-        }
-
-        /* if we had a leading decimal point. */
-        if ((i < number.number_size) && (#char "." == number.number[i])) {
-            i = 0;
-
-            /* skip any leading '+'. */
-            if (#char "+" == number.number[i]) {
-                i += 1;
-            }
-
-            /* output the leading '-' if we had one. */
-            if (#char "-" == number.number[i]) {
-                *data += 1 = #char "-";
-                i += 1;
-            }
-
-            /* insert a '0' to fix the leading decimal point for JSON output. */
-            *data += 1 = #char "0";
-
-            /* and output the rest of the number as normal. */
-            for (; i < number.number_size; i += 1) {
-                *data += 1 = number.number[i];
-            }
-
-            return data;
-        }
-
-        for (; i < number.number_size; i += 1) {
-            const char c = number.number[i];
-            if (!(#char "0" <= c && c <= #char "9")) {
-                break;
-            }
-        }
-
-        /* if we had a trailing decimal point. */
-        if ((i + 1 == number.number_size) && (#char "." == number.number[i])) {
-            i = 0;
-
-            /* skip any leading '+'. */
-            if (#char "+" == number.number[i]) {
-                i += 1;
-            }
-
-            /* output the leading '-' if we had one. */
-            if (#char "-" == number.number[i]) {
-                *data += 1 = #char "-";
-                i += 1;
-            }
-
-            /* and output the rest of the number as normal. */
-            for (; i < number.number_size; i += 1) {
-                *data += 1 = number.number[i];
-            }
-
-            /* insert a '0' to fix the trailing decimal point for JSON output. */
-            *data += 1 = #char "0";
-
-            return data;
-        }
-
-        i = 0;
-
-        /* skip any leading '+'. */
-        if (#char "+" == number.number[i]) {
-            i += 1;
-        }
-
-        for (; i < number.number_size; i += 1) {
-            *data += 1 = number.number[i];
-        }
-
-        return data;
+    /* check if we have nan. */
+    nan := "NaN";
+    if num_str == nan
+    {
+        /* NaN becomes 0 because JSON can't support it. */
+        append( builder, "0" );
+        return true;
     }
 
-char *json_write_string(const *json_string_s *string, char *data) {
-    size_t i;
+    /* if we had a leading '-' we need to record it in the JSON output. */
+    if #char "-" == number.number[0]
+        append( builder, #char "-" );
 
-    *data += 1 = #char "\""; /* open the string. */
-
-    for (i = 0; i < string->string_size; i += 1) {
-        switch (string->string[i]) {
-            case #char "\"":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "\"";
-            break;
-            case #char "\\":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "\\";
-            break;
-            case #char "\b":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "b";
-            break;
-            case #char "\f":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "f";
-            break;
-            case #char "\n":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "n";
-            break;
-            case #char "\r":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "r";
-            break;
-            case #char "\t":
-            *data += 1 = #char "\\"; /* escape the control character. */
-            *data += 1 = #char "t";
-            break;
-        case;
-            *data += 1 = string->string[i];
-            break;
-        }
+    /* check if we have infinity. */
+    inf := "Infinity";
+    if num_str == inf
+    {
+        append( builder, "1.7976931348623158e308" );
+        return true;
     }
 
-    *data += 1 = #char "\""; /* close the string. */
+    /* if we had a leading decimal point. */
+    if (i < number.number_size) && (#char "." == number.number[i])
+        /* insert a '0' to fix the leading decimal point for JSON output. */
+        append( builder, "0" );
 
-    return data;
+    /* and output the rest of the number as normal. */
+    append( builder, num_str );
+
+    /* if we had a trailing decimal point. */
+    if num_str[ num_str.count - 1] == #char "."
+        /* insert a '0' to fix the trailing decimal point for JSON output. */
+        append( builder, "0" );
+
+    return true;
 }
 
-char *json_write_minified_array(const *json_array_s *array, char *data) {
-  *json_array_element_s *element = null;
+json_write_string :: ( str: *json_string_s, builder: *String_Builder ) -> bool
+{
+    append( builder, #char "\"" ); /* open the string. */
 
-  *data += 1 = #char "["; /* open the array. */
-
-  for (element = array->start; null != element; element = element->next) {
-    if (element != array->start) {
-      *data += 1 = #char ","; /* ','s seperate each element. */
+    for i: 0 .. str.string_size - 1
+    {
+        if str.str[i] ==
+        {
+            case #char "\"";
+                append( builder, "\\\"" );
+            case #char "\\";
+                append( builder, "\\\\" );
+            case 0x08;
+                append( builder, "\\b" );
+            case 0x0c;
+                append( builder, "\\f" );
+            case #char "\n";
+                append( builder, "\\n" );
+            case #char "\r";
+                append( builder, "\\r" );
+            case #char "\t";
+                append( builder, "\\t" );
+            case;
+                append( builder, str.str[i] );
+        }
     }
 
-    data = json_write_minified_value(element->value, data);
-
-    if (null == data) {
-      /* value was malformed! */
-      return null;
-    }
-  }
-
-  *data += 1 = #char "]"; /* close the array. */
-
-  return data;
+    append( builder, #char "\"" ); /* close the string. */
+    return true;
 }
 
-char *json_write_pretty_array(const *json_array_s *array, size_t depth,
-                              const char *indent, const char *newline,
-                              char *data) {
-  size_t k, m;
-  *json_array_element_s *element;
+json_write_minified_array :: ( array: *json_array_s, builder: *String_Builder ) -> bool
+{
+    append( builder, #char "[" ); /* open the array. */
 
-  *data += 1 = #char "["; /* open the array. */
+    element: *json_array_element_s = array.start;
+    while( element != null )
+    {
+        if element != array.start
+            append( builder, #char "," ); /* ','s seperate each element. */
 
-  if (0 < array->length) {
-    for (k = 0; #char "\0" != newline[k]; k += 1) {
-      *data += 1 = newline[k];
+        ok := json_write_minified_value( element.value, builder );
+        if !ok
+            /* value was malformed! */
+            return false;
+
+        element = element.next;
     }
 
-    for (element = array->start; null != element;
-         element = element->next) {
-      if (element != array->start) {
-        *data += 1 = #char ","; /* ','s seperate each element. */
-
-        for (k = 0; #char "\0" != newline[k]; k += 1) {
-          *data += 1 = newline[k];
-        }
-      }
-
-      for (k = 0; k < depth + 1; k += 1) {
-        for (m = 0; #char "\0" != indent[m]; m += 1) {
-          *data += 1 = indent[m];
-        }
-      }
-
-      data = json_write_pretty_value(element->value, depth + 1, indent, newline,
-                                     data);
-
-      if (null == data) {
-        /* value was malformed! */
-        return null;
-      }
-    }
-
-    for (k = 0; #char "\0" != newline[k]; k += 1) {
-      *data += 1 = newline[k];
-    }
-
-    for (k = 0; k < depth; k += 1) {
-      for (m = 0; #char "\0" != indent[m]; m += 1) {
-        *data += 1 = indent[m];
-      }
-    }
-  }
-
-  *data += 1 = #char "]"; /* close the array. */
-
-  return data;
+    append( builder, #char "]" ); /* close the array. */
+    return true;
 }
 
-char *json_write_minified_object(const *json_object_s *object,
-                                 char *data) {
-  *json_object_element_s *element = null;
+json_write_pretty_array :: ( array: *json_array_s, depth: int, indent: string, newline: string, builder: *String_Builder ) -> bool
+{
+    append( builder, #char "[" ); /* open the array. */
 
-  *data += 1 = #char "{"; /* open the object. */
+    if 0 < array.length
+    {
+        append( builder, newline );
 
-  for (element = object->start; null != element; element = element->next) {
-    if (element != object->start) {
-      *data += 1 = #char ","; /* ','s seperate each element. */
+        element: *json_array_element_s = array.start;
+        while element != null
+        {
+            if element != array.start
+                print_to_builder( builder, ",%", newline ); /* ','s seperate each element. */
+
+            for k: 0 .. depth
+                append( builder, indent );
+
+            ok := json_write_pretty_value( element.value, depth + 1, indent, newline, builder );
+            if !ok
+                /* value was malformed! */
+                return false;
+
+            element = element.next;
+        }
+
+        append( builder, newline );
+
+        for k: 0 .. depth - 1
+            append( builder, indent );
     }
 
-    data = json_write_string(element->name, data);
-
-    if (null == data) {
-      /* string was malformed! */
-      return null;
-    }
-
-    *data += 1 = #char ":"; /* ':'s seperate each name/value pair. */
-
-    data = json_write_minified_value(element->value, data);
-
-    if (null == data) {
-      /* value was malformed! */
-      return null;
-    }
-  }
-
-  *data += 1 = #char "}"; /* close the object. */
-
-  return data;
+    append( builder, #char "]" ); /* close the array. */
+    return true;
 }
 
-char *json_write_pretty_object(const *json_object_s *object, size_t depth,
-                               const char *indent, const char *newline,
-                               char *data) {
-  size_t k, m;
-  *json_object_element_s *element;
+json_write_minified_object :: ( object: *json_object_s, builder: *String_Builder ) -> bool
+{
+    append( builder, #char "{" ); /* open the object. */
 
-  *data += 1 = #char "{"; /* open the object. */
+    element: *json_object_element_s = object.start;
+    while element != null
+    {
+        if element != object.start
+            append( builder, #char "," ); /* ','s seperate each element. */
 
-  if (0 < object->length) {
-    for (k = 0; #char "\0" != newline[k]; k += 1) {
-      *data += 1 = newline[k];
+        ok := json_write_string( element.name, builder );
+        if !ok
+            /* string was malformed! */
+            return false;
+
+        append( builder, #char ":" ); /* ':'s seperate each name/value pair. */
+
+        ok = json_write_minified_value( element.value, builder );
+        if !ok
+            /* value was malformed! */
+            return false;
+
+        element = element.next;
     }
 
-    for (element = object->start; null != element;
-         element = element->next) {
-      if (element != object->start) {
-        *data += 1 = #char ","; /* ','s seperate each element. */
+    append( builder, #char "}" ); /* close the object. */
+    return true;
+}
 
-        for (k = 0; #char "\0" != newline[k]; k += 1) {
-          *data += 1 = newline[k];
+json_write_pretty_object :: ( object: *json_object_s, depth: int, indent: string, newline: string, builder: *String_Builder ) -> bool
+{
+    append( builder, #char "{" ); /* open the object. */
+
+    if 0 < object.length
+    {
+        append( builder, newline );
+
+        element: *json_object_element_s = object.start;
+        while element != null
+        {
+            if element != object.start
+                print_to_builder( builder, ",%", newline ); /* ','s seperate each element. */
+
+            for k: 0 .. depth
+                append( builder, indent );
+
+            ok := json_write_string( element.name, builder );
+            if !ok
+                /* string was malformed! */
+                return false;
+
+            /* " : "s seperate each name/value pair. */
+            append( builder, " : " );
+
+            ok = json_write_pretty_value( element.value, depth + 1, indent, newline, builder );
+            if !ok
+                /* value was malformed! */
+                return false;
+
+            element = element.next;
         }
-      }
 
-      for (k = 0; k < depth + 1; k += 1) {
-        for (m = 0; #char "\0" != indent[m]; m += 1) {
-          *data += 1 = indent[m];
-        }
-      }
+        append( builder, newline );
 
-      data = json_write_string(element->name, data);
-
-      if (null == data) {
-        /* string was malformed! */
-        return null;
-      }
-
-      /* " : "s seperate each name/value pair. */
-      *data += 1 = #char " ";
-      *data += 1 = #char ":";
-      *data += 1 = #char " ";
-
-      data = json_write_pretty_value(element->value, depth + 1, indent, newline,
-                                     data);
-
-      if (null == data) {
-        /* value was malformed! */
-        return null;
-      }
+        for k: 0 .. depth - 1
+            append( builder, indent );
     }
 
-    for (k = 0; #char "\0" != newline[k]; k += 1) {
-      *data += 1 = newline[k];
-    }
-
-    for (k = 0; k < depth; k += 1) {
-      for (m = 0; #char "\0" != indent[m]; m += 1) {
-        *data += 1 = indent[m];
-      }
-    }
-  }
-
-  *data += 1 = #char "}"; /* close the object. */
-
-  return data;
+    append( builder, #char "}" ); /* close the object. */
+    return true;
 }
 
