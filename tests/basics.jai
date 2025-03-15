@@ -746,7 +746,7 @@ test_string_unicode_escape :: ()
         "\xEA\x83\x8AABC\xC3\x8ADEF\n ,\xC5\xBD,\xE0\xA0\x80,\xE0\xA6\xA8,\xE2\x99\x9E,\xEF\xBF\xBD,\xD0\xA8,\xE4\x93\x8D,\xF0\x90\x80\x80,\xF0\x9F\x98\x83.";
 
     payload :=
-        "[\"\\Ua0caABC\\U00caDEF\\u000a\\u0020,\\u017D,\\u0800,\\u09A8,\\u265E,\\uFFFD,\\u0428,\\u44CD,\\uD800\\uDC00,\\uD83D\\uDE03.\"]";
+        "[\"\\ua0caABC\\u00caDEF\\u000a\\u0020,\\u017D,\\u0800,\\u09A8,\\u265E,\\uFFFD,\\u0428,\\u44CD,\\uD800\\uDC00,\\uD83D\\uDE03.\"]";
 
     value := json_parse(payload);
 

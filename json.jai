@@ -1130,7 +1130,7 @@ json_get_string_size :: ( state: *json_parse_state_s, is_key: u64 ) -> int
 
         if src[offset] ==
         {
-            case #char "\0";
+            case #char "\0"; #through;
             case #char "\t";
                 state.error = .json_parse_error_invalid_string;
                 state.offset = offset;
@@ -1155,13 +1155,13 @@ json_get_string_size :: ( state: *json_parse_state_s, is_key: u64 ) -> int
                     state.error = .json_parse_error_invalid_string_escape_sequence;
                     state.offset = offset;
                     return 1;
-                case #char "\"";
-                case #char "\\";
-                case #char "/";
-                case #char "b";
-                case #char "f";
-                case #char "n";
-                case #char "r";
+                case #char "\""; #through;
+                case #char "\\"; #through;
+                case #char "/"; #through;
+                case #char "b"; #through;
+                case #char "f"; #through;
+                case #char "n"; #through;
+                case #char "r"; #through;
                 case #char "t";
                     /* all valid characters! */
                     offset += 1;
@@ -1304,15 +1304,18 @@ json_parse_string :: ( state: *json_parse_state_s, str: *json_string_s )
             /* skip the reverse solidus. */
             offset += 1;
 
-            if src[offset] ==
+            c := src[offset];
+            offset += 1;
+            if c ==
             {
                 case;
                     return; /* we cannot ever reach here. */
                 case #char "u";
                 {
                     codepoint = 0;
-                    if !json_hexadecimal_value( *src[offset], 4, *codepoint )
-                        return; /* this shouldn't happen as the value was already validated. */
+                    ok := json_hexadecimal_value( *src[offset], 4, *codepoint );
+                    /* this shouldn't happen as the value was already validated. */
+                    assert( ok && "Failed to parse hexadecimal value" );
 
                     offset += 4;
 
@@ -1326,6 +1329,7 @@ json_parse_string :: ( state: *json_parse_state_s, str: *json_string_s )
                         data[bytes_written] = cast(u8)(0xc0 | (codepoint >> 6)); /* 110xxxxx. */
                         bytes_written += 1;
                         data[bytes_written] = cast(u8)(0x80 | (codepoint & 0x3f)); /* 10xxxxxx. */
+                        bytes_written += 1;
                     }
                     else if codepoint >= 0xd800 && codepoint <= 0xdbff /* high surrogate. */
                     { 
@@ -1399,7 +1403,6 @@ json_parse_string :: ( state: *json_parse_state_s, str: *json_string_s )
                     data[bytes_written] = #char "\n";
                     bytes_written += 1;
             }
-            offset += 1;
         }
         else
         {
@@ -1780,12 +1783,12 @@ json_get_number_size :: ( state: *json_parse_state_s ) -> int
     {
         if src[offset] ==
         {
-            case #char " ";
-            case #char "\t";
-            case #char "\r";
-            case #char "\n";
-            case #char "}";
-            case #char ",";
+            case #char " "; #through;
+            case #char "\t"; #through;
+            case #char "\r"; #through;
+            case #char "\n"; #through;
+            case #char "}"; #through;
+            case #char ","; #through;
             case #char "]";
                 /* all of the above are ok. */
             case #char "=";
@@ -1987,16 +1990,16 @@ json_skip_whitespace :: ( state: *json_parse_state_s ) -> int
 
     while offset < size
     {
-        // FIXME Review all cases! 'break' is not a thing, and also we need to specify #through
         if src[offset] ==
         {
             case;
                 /* Update offset. */
                 state.offset = offset;
                 return 1;
-            case #char " ";
-            case #char "\r";
+            case #char " "; #through;
+            case #char "\r"; #through;
             case #char "\t";
+                /* break; */
             case #char "\n";
                 state.line_no += 1;
                 state.line_offset = offset;
