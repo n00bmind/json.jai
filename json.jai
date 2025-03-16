@@ -150,7 +150,7 @@ json_parse_flags_e :: enum_flags
         json_parse_flags_allow_multi_line_strings);
 }
 
-/* error report from json_parse_ex(). */
+/* error report from json_parse(). */
 json_parse_result_s :: struct
 {
     /* the error code (one of json_parse_error_e). */
@@ -195,16 +195,19 @@ json_parse_error_e :: enum
 
 //// Reading
 
+AllocProc :: #type ( user_data: *void, size: u64 ) -> *void;
+FreeProc :: #type ( p: *void );
+
 /* Parse a JSON text file, returning a pointer to the root of the JSON
  * structure. json_parse performs 1 call to malloc for the entire encoding.
  * Returns 0 if an error occurred (malformed JSON input, or malloc failed). */
 json_parse :: ( src: string ) -> *json_value_s
 {
-    return json_parse_ex( src.data, xx src.count, .json_parse_flags_default, null, null, null );
+    return json_parse( src.data, xx src.count, .json_parse_flags_default, null, null, null );
 }
 json_parse :: ( src: *void, src_size: u64 ) -> *json_value_s
 {
-    return json_parse_ex( src, src_size, .json_parse_flags_default, null, null, null );
+    return json_parse( src, src_size, .json_parse_flags_default, null, null, null );
 }
 
 /* Parse a JSON text file, returning a pointer to the root of the JSON
@@ -213,12 +216,10 @@ json_parse :: ( src: *void, src_size: u64 ) -> *json_value_s
  * failed). If an error occurred, the result struct (if not NULL) will explain
  * the type of error, and the location in the input it occurred. If
  * alloc_func_ptr is null then malloc is used. */
-AllocProc :: #type ( user_data: *void, size: u64 ) -> *void;
-FreeProc :: #type ( p: *void );
 
 // TODO Make some of these args have defaults
-json_parse_ex :: ( src: *void, src_size: u64, flags_bitset: json_parse_flags_e, alloc_func_ptr: AllocProc, user_data: *void,
-                   result: *json_parse_result_s ) -> *json_value_s
+json_parse :: ( src: *void, src_size: u64, flags_bitset: json_parse_flags_e, alloc_func_ptr: AllocProc, user_data: *void,
+                result: *json_parse_result_s ) -> *json_value_s
 {
     state: json_parse_state_s;
     allocation: *void;
@@ -262,7 +263,6 @@ json_parse_ex :: ( src: *void, src_size: u64, flags_bitset: json_parse_flags_e, 
         {
             /* our parsing didn't have an error, but there are characters remaining in
             * the input that weren't part of the JSON! */
-
             state.error = .json_parse_error_unexpected_trailing_characters;
             input_error = 1;
         }
@@ -428,7 +428,6 @@ json_write_pretty :: ( value: *json_value_s, indent: string, newline: string ) -
 
     return builder_to_string( *builder, do_reset = false );
 }
-
 
 
 

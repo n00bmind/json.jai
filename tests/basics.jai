@@ -660,7 +660,7 @@ test_object_missing_closing_bracket :: ()
     payload := "{\n  \"dps\":[1, 2, {\"a\" : true]\n}";
 
     result: json_parse_result_s;
-    value := json_parse_ex(payload.data, xx payload.count, 0, null, null, *result);
+    value := json_parse(payload.data, xx payload.count, 0, null, null, *result);
 
     AssertFalse(value);
 
@@ -675,7 +675,7 @@ test_array_missing_closing_bracket :: ()
     payload := "{\n  \"dps\":[1, 2, 3\n}";
 
     result: json_parse_result_s;
-    value := json_parse_ex(payload.data, xx payload.count, 0, null, null, *result);
+    value := json_parse(payload.data, xx payload.count, 0, null, null, *result);
 
     AssertFalse(value);
 
@@ -852,21 +852,21 @@ test_random_number_overrun :: ()
 test_random_skip_c_style_overrun :: ()
 {
     payload := u8.[ #char "4", #char "e" ];
-    root := json_parse_ex(payload.data, 2, .json_parse_flags_allow_json5, null, null, null);
+    root := json_parse(payload.data, 2, .json_parse_flags_allow_json5, null, null, null);
     AssertFalse(root);
 } @test
 
 test_random_infinity_overrun :: ()
 {
     payload := u8.[ #char "[", #char "I", #char "n", #char "f", #char "i", #char "n", #char "i", #char "t", #char "y", #char "0", #char "]" ];
-    root := json_parse_ex(payload.data, 11, .json_parse_flags_allow_inf_and_nan, null, null, null);
+    root := json_parse(payload.data, 11, .json_parse_flags_allow_inf_and_nan, null, null, null);
     AssertFalse(root);
 } @test
 
 test_random_nan_overrun :: ()
 {
     payload := u8.[ #char "[", #char "N", #char "a", #char "N", #char "0", #char "]" ];
-    root := json_parse_ex(payload.data, 11, .json_parse_flags_allow_inf_and_nan, null, null, null);
+    root := json_parse(payload.data, 11, .json_parse_flags_allow_inf_and_nan, null, null, null);
     AssertFalse(root);
 } @test
 
@@ -876,7 +876,7 @@ test_random_array_overrun :: ()
         #char "e", #char "/", #char " ", #char "\"", #char "b", #char "\"", #char " ", #char ":", #char " ", #char "[",
         #char "f", #char "a", #char "l", #char "s", #char "e", #char ",", #char " ", #char "n", #char "u", #char "l",
         #char "l", #char ",", #char " ", #char "\"", #char "f", #char "o", #char "o", #char "\"", #char "]", #char "}" ];
-    root := json_parse_ex(payload.data, 40, 0x2ffff, null, null, null);
+    root := json_parse(payload.data, 40, 0x2ffff, null, null, null);
     AssertFalse(root);
 } @test
 
@@ -887,7 +887,7 @@ test_random_github_92 ::()
     payload := u8.[ 0x6c, 0x3a, 0x4e, 0x61, 0x4e, 0x45, 0x38, 0x0d, 0x0d, 0x22, 0x27, 0x5b,
                     0x2f, 0x2a, 0x2a, 0x31, 0x31, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6,
                     0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0x6f, 0x01, 0x65, 0x22, 0x3a, 0x31 ];
-    root := json_parse_ex(payload.data, 0x23, xx 0x5fd6d7d6d6247bff, null, null, null );
+    root := json_parse(payload.data, 0x23, xx 0x5fd6d7d6d6247bff, null, null, null );
     AssertFalse(root);
 } @test
 
@@ -901,7 +901,7 @@ test_random_github_93 :: ()
         0x2c, 0x2f, 0x2a, 0x2a, 0x31, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6,
         0xd6, 0xd6, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27,
         0x27, 0x27, 0x27, 0x27, 0x27, 0x6f, 0x01, 0x61, 0x22, 0x3a, 0x31, 0x20 ];
-    root := json_parse_ex(payload.data, 0x54, xx 0x5fd628d6d6247bff, null, null, null );
+    root := json_parse(payload.data, 0x54, xx 0x5fd628d6d6247bff, null, null, null );
     AssertFalse(root);
 } @test
 
@@ -911,7 +911,7 @@ test_random_github_94 :: ()
       0x6c, 0x3a, 0x4e, 0x61, 0x4e, 0x45, 0x38, 0x0d, 0x0d, 0x22, 0x0e, 0x5b,
       0x2f, 0x2f, 0x2a, 0x31, 0x31, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6,
       0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0x6f, 0x01, 0x65, 0x22, 0x3a, 0x31 ];
-    root := json_parse_ex(payload.data, 0x23, xx 0x5fd6d7d6d6247b16, null, null, null );
+    root := json_parse(payload.data, 0x23, xx 0x5fd6d7d6d6247b16, null, null, null );
     AssertFalse(root);
 } @test
 
@@ -926,7 +926,7 @@ test_random_github_95 :: ()
       0x20, 0x30, 0x2c, 0x31, 0x2c, 0x5b, 0x31, 0x2c, 0x20, 0x30, 0x2c, 0x5b,
       0x31, 0x0e, 0x5b, 0x7b, 0x2a, 0x2a, 0x31, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6,
       0xd6, 0xd6, 0xd6, 0xd6, 0x6f, 0x01, 0x65, 0x22, 0x3a, 0x31, 0x20 ];
-    root := json_parse_ex(payload.data, 0x5f, xx 0x5fd6d79cd6247bff, null, null, null );
+    root := json_parse(payload.data, 0x5f, xx 0x5fd6d79cd6247bff, null, null, null );
     AssertFalse(root);
 } @test
 
@@ -962,7 +962,7 @@ test_random_github_96 :: ()
             0x7b, 0x7b, 0xff, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0xd6,
             0x54, 0x61, 0x67, 0x73, 0xff, 0xff, 0x7f, 0xff, 0x65, 0x22, 0x3a, 0x20,
             0x32, 0x30, 0x30, 0x2c, 0x0a, 0x20 ];
-        root := json_parse_ex(payload.data, 0x14a, xx 0xd6d7d6d6247bff1f, null, null, null );
+        root := json_parse(payload.data, 0x14a, xx 0xd6d7d6d6247bff1f, null, null, null );
         AssertFalse(root);
     }
 
@@ -1206,7 +1206,7 @@ test_random_github_96 :: ()
             0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0xd6, 0x54, 0x61,
             0x67, 0x73, 0xff, 0xff, 0x7f, 0xff, 0x65, 0x22, 0x3a, 0x20, 0x32, 0x30,
             0x30, 0x2c, 0x0a, 0x20 ];
-        root := json_parse_ex(payload.data, 0xb20, xx 0xd6d7d6d6247bff7f, null, null, null );
+        root := json_parse(payload.data, 0xb20, xx 0xd6d7d6d6247bff7f, null, null, null );
         AssertFalse(root);
     }
 } @test
@@ -1294,7 +1294,7 @@ test_random_github_97 :: ()
       0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x73, 0xff, 0xff,
       0x7f, 0xff, 0x65, 0x22, 0x3a, 0x20, 0x32, 0x30, 0x30, 0x2c, 0x0a, 0x20,
       0x20 ];
-    root := json_parse_ex(payload.data, 0x3b5, xx 0x5fd6d7d6d6247bdf, null, null, null );
+    root := json_parse(payload.data, 0x3b5, xx 0x5fd6d7d6d6247bdf, null, null, null );
     AssertFalse(root);
 } @test
 

@@ -28,7 +28,7 @@ test_allow_json5_example1 :: ()
             ],
     }
 STR
-    value := json_parse_ex(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
+    value := json_parse(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
     Assert(value);
     free(value);
 } @test
@@ -76,7 +76,7 @@ test_allow_json5_example2 :: ()
         },
     }
 STR
-    value := json_parse_ex(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
+    value := json_parse(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
     Assert(value);
     free(value);
 } @test
@@ -125,7 +125,7 @@ init_allow_json5 :: () -> *json_value_s
         },
     }
 STR
-    value := json_parse_ex(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
+    value := json_parse(payload.data, xx payload.count, .json_parse_flags_allow_json5, null, null, null);
     return value;
 }
 
