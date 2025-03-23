@@ -404,19 +404,10 @@ json_write_minified :: ( value: *json_value_s ) -> string
     return builder_to_string( *builder, do_reset = false );
 }
 
-json_write_pretty :: ( value: *json_value_s, indent: string, newline: string ) -> string
+json_write_pretty :: ( value: *json_value_s, indent := "  ", newline := "\n" ) -> string
 {
     if null == value
         return "";
-
-    #if 0
-    {
-        if null == indent
-        indent = "  "; /* default to two spaces. */
-
-        if null == newline
-        newline = "\n"; /* default to normal ass newlines. */
-    }
 
     builder: String_Builder;
     builder.allocator = temp;
